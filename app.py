@@ -6,7 +6,7 @@ import pymysql
 from db_connection import connect_db
 from db_connection import close_db
 # from flask_api import status
-from config import AWS_ACCESS_KEY, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME, AWS_S3_BUCKET_REGION
+from secret import AWS_ACCESS_KEY, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME, AWS_S3_BUCKET_REGION
 import boto3
 import logging
 from botocore.exceptions import ClientError
