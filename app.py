@@ -1,3 +1,4 @@
+from crypt import methods
 from flask import Flask
 from flask import request
 from flask import jsonify
@@ -7,13 +8,18 @@ from db_connection import connect_db
 from db_connection import close_db
 # from flask_api import status
 from secret import AWS_ACCESS_KEY, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME, AWS_S3_BUCKET_REGION
+from secret import AWS_REQUEST_SQS_URL
 import boto3
 import logging
+import json
 from botocore.exceptions import ClientError
+from sqs_connection import get_request_queue, get_response_queue
 
 app = Flask(__name__)
 
 s3_client = boto3.client('s3', aws_access_key_id = AWS_ACCESS_KEY, aws_secret_access_key = AWS_SECRET_ACCESS_KEY, region_name = AWS_S3_BUCKET_REGION)
+logger = logging.getLogger(__name__)
+
 
 @app.route('/')
 def hello():
@@ -87,5 +93,40 @@ def download():
         return None
     response = { 'download_url': download_url }
     return jsonify(response)
+
+@app.route('/inference', methods=['POST'])
+def hairclip_inference():
+    params = request.get_json()
+    param_user_id = params['user_id']
+    param_hair_style = params['hair_style']
+    param_hair_color = params['hair_color']
+
+    # Getting Request Queue from SQS
+    request_queue = get_request_queue()
+
+    message_body_json = {
+        'user_id' : param_user_id,
+        'hair_style' : param_hair_style,
+        'hair_color' : param_hair_color 
+    }
+
+    message_body_str = json.dumps(message_body_json)
+
+    try:
+        # Send message to Request Queue
+        send_result = request_queue.send_message(MessageBody=message_body_str, QueueUrl=AWS_REQUEST_SQS_URL)
+
+
+    except ClientError as error:
+        logger.exception("Send message failed! (Message body : { user_id : %s, hair_style : %s, hair_color : %s })"
+        , param_user_id, param_hair_style, param_hair_color)
+
+        raise error
+
+    
+    # Getting Response Queue from SQS
+    response_queue = get_response_queue()
+
+    return send_result
 
 # FLASK_APP=app.py flask run
