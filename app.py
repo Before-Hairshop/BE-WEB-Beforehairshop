@@ -50,33 +50,49 @@ def create_review():
     # print(param['review'])
     return jsonify(response_result), 201
 
+# ==================
+## 이미지 업로드 API
+# ==================
 @app.route('/upload', methods=['POST'])
 def upload():
     # user 테이블에 튜플 insert
-    user_id = '1'
-    path = '/' + user_id + '/' + 'profile.jpeg'
+    conn, cur = connect_db()
+    insert_sql = "insert into user values () ;"
+    cur.execute(insert_sql)
+    user_id = str(cur.lastrowid)
+    conn.commit()
+
+    path = '/' + str(user_id) + '/' + 'profile.jpeg'
     try:
-        response = s3_client.generate_presigned_url('put_object',
+        upload_url = s3_client.generate_presigned_url('put_object',
                                                     Params={'Bucket': AWS_S3_BUCKET_NAME,
                                                             'Key': path},
                                                     ExpiresIn=1000 * 60 * 3) # 3분
     except ClientError as e:
         logging.error(e)
         return None
-    return response
+    
+    close_db(conn, cur)
 
+    response = { 'user_id': user_id, 'upload_url': upload_url }
+    return jsonify(response)
+
+# ==================
+## 테스트용
+# ==================
 @app.route('/download', methods=['POST'])
 def download():
     path = '/1/profile.jpeg'
     try:
-        response = s3_client.generate_presigned_url('get_object',
+        download_url = s3_client.generate_presigned_url('get_object',
                                                     Params={'Bucket': AWS_S3_BUCKET_NAME,
                                                             'Key': path},
                                                     ExpiresIn=1000 * 60 * 3) # 3분
     except ClientError as e:
         logging.error(e)
         return None
-    return response
+    response = { 'download_url': download_url }
+    return jsonify(response)
 
 @app.route('/inference', methods=['POST'])
 def hairclip_inference():
