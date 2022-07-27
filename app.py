@@ -8,7 +8,7 @@ from db_connection import connect_db
 from db_connection import close_db
 # from flask_api import status
 from secret import AWS_ACCESS_KEY, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME, AWS_S3_BUCKET_REGION
-from secret import AWS_REQUEST_SQS_URL
+from secret import AWS_REQUEST_SQS_URL, AWS_RESPONSE_SQS_URL
 import boto3
 import logging
 import json
@@ -127,6 +127,15 @@ def hairclip_inference():
     # Getting Response Queue from SQS
     response_queue = get_response_queue()
 
-    return send_result
+    # Receive message from Response Queue
+    while True:
+        response_from_response_queue = response_queue.receive_message(QueueUrl=AWS_RESPONSE_SQS_URL)
+        if response_from_response_queue != None:
+            logger.info("Receive message from Response Queue!")
+            break
+    
+    # response_json_from_response_queue = 
+    
+    return
 
 # FLASK_APP=app.py flask run
