@@ -15,7 +15,7 @@ def get_request_queue():
 
 def get_response_queue():
     aws_session = boto3.Session(aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_ACCESS_KEY, region_name=AWS_SQS_REGION)
-    sqs = aws_session.client('sqs')
+    sqs = aws_session.resource('sqs')
 
     queue = sqs.get_queue_by_name(QueueName=AWS_RESPONSE_SQS_NAME)
     return queue
