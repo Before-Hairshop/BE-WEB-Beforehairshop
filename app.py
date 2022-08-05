@@ -2,6 +2,7 @@ from crypt import methods
 from flask import Flask
 from flask import request
 from flask import jsonify
+from flask_socketio import SocketIO
 import flask
 import pymysql
 from db_connection import connect_db
@@ -16,10 +17,13 @@ from botocore.exceptions import ClientError
 from sqs_connection import get_request_queue, get_response_queue
 
 app = Flask(__name__)
+socket_io = SocketIO(app)
 
 s3_client = boto3.client('s3', aws_access_key_id = AWS_ACCESS_KEY, aws_secret_access_key = AWS_SECRET_ACCESS_KEY, region_name = AWS_S3_BUCKET_REGION)
 logger = logging.getLogger(__name__)
-
+# Getting Request Queue from SQS
+request_queue = get_request_queue()
+response_queue = get_response_queue()
 
 @app.route('/')
 def hello():
@@ -98,16 +102,9 @@ def download():
 def hairclip_inference():
     params = request.get_json()
     param_user_id = params['user_id']
-    param_hair_style = params['hair_style']
-    param_hair_color = params['hair_color']
-
-    # Getting Request Queue from SQS
-    request_queue = get_request_queue()
 
     message_body_json = {
-        'user_id' : param_user_id,
-        'hair_style' : param_hair_style,
-        'hair_color' : param_hair_color 
+        'user_id' : param_user_id
     }
 
     message_body_str = json.dumps(message_body_json)
@@ -118,24 +115,52 @@ def hairclip_inference():
 
 
     except ClientError as error:
-        logger.exception("Send message failed! (Message body : { user_id : %s, hair_style : %s, hair_color : %s })"
-        , param_user_id, param_hair_style, param_hair_color)
+        logger.exception("Send message failed! (Message body : { user_id : %s })", param_user_id)
 
         raise error
-
     
-    # Getting Response Queue from SQS
-    response_queue = get_response_queue()
+    return send_result
 
-    # Receive message from Response Queue
-    while True:
-        response_from_response_queue = response_queue.receive_message(QueueUrl=AWS_RESPONSE_SQS_URL)
-        if response_from_response_queue != None:
-            logger.info("Receive message from Response Queue!")
-            break
+@app.route('/receive')
+def send():
     
-    # response_json_from_response_queue = 
-    
-    return
+    print('test')
+    try:
+        messages = response_queue.meta.client.receive_message(
+            QueueUrl=AWS_RESPONSE_SQS_URL,
+            MaxNumberOfMessages=2,
+            WaitTimeSeconds=2,
+            MessageAttributeNames=['All']
+        )
+        if 'Messages' not in messages:
+            logger.info('message not in response_queue!')
+            fail_result = {'result': 'fail' }
+            return jsonify(fail_result) 
+        
 
+        # for message in messages:
+        for message in messages['Messages']:
+            data = message['Body']
+            data = json.loads(data)
+            
+            param_user_id = data["user_id"]
+
+            socket_io.send('{}'.format(param_user_id))
+
+            print("Message from Request Queue : ", data)    
+            
+            response_queue.meta.client.delete_message(
+                QueueUrl=AWS_RESPONSE_SQS_URL,
+                ReceiptHandle=message['ReceiptHandle']
+            )
+            success_result = {'result': 'success', 'user_id': '{}'.format(param_user_id) }
+            return jsonify(success_result) 
+
+    except ClientError as error:
+        logger.exception("receive message from Response queue failed! (Message body : { user_id : %s })", param_user_id)
+        print('error')
+        raise error
+
+if __name__ == '__main__':
+    socket_io.run(app, host='0.0.0.0', port=5000, debug=True)
 # FLASK_APP=app.py flask run
