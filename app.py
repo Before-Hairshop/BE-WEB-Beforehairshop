@@ -111,18 +111,17 @@ def hairclip_inference():
     }
 
     message_body_str = json.dumps(message_body_json)
-
+    success_response = {"result" : "success"}
+    fail_response = {"result" : "fail"}
+             
     try:
         # Send message to Request Queue
-        send_result = request_queue.send_message(MessageBody=message_body_str, QueueUrl=AWS_REQUEST_SQS_URL)
-
-
+        request_queue.send_message(MessageBody=message_body_str, QueueUrl=AWS_REQUEST_SQS_URL)
     except ClientError as error:
         logger.exception("Send message failed! (Message body : { user_id : %s })", param_user_id)
-
-        raise error
+        return jsonify(fail_response)
     
-    return send_result
+    return jsonify(success_response)
 
 # ==================
 ## Response_queue로부터 inference 완료 메시지 받는 API (using Socket)
