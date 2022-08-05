@@ -98,6 +98,9 @@ def download():
     response = { 'download_url': download_url }
     return jsonify(response)
 
+# ==================
+## Inference 요청 API
+# ==================
 @app.route('/inference', methods=['POST'])
 def hairclip_inference():
     params = request.get_json()
@@ -121,14 +124,16 @@ def hairclip_inference():
     
     return send_result
 
+# ==================
+## Response_queue로부터 inference 완료 메시지 받는 API (using Socket)
+# ==================
 @app.route('/receive')
 def send():
     
-    print('test')
     try:
         messages = response_queue.meta.client.receive_message(
             QueueUrl=AWS_RESPONSE_SQS_URL,
-            MaxNumberOfMessages=2,
+            MaxNumberOfMessages=1,
             WaitTimeSeconds=2,
             MessageAttributeNames=['All']
         )
