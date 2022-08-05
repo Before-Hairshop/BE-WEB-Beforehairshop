@@ -40,8 +40,8 @@ def create_review():
     conn, cur = connect_db()
 
     ## insert data - review table
-    insert_sql = "insert into review (user_id, content) values (%s, %s);"
-    review_values = (param['user_id'], param['review'])
+    insert_sql = "insert into review (user_id, point, content) values (%s, %s, %s);"
+    review_values = (param['user_id'], param['point'], param['review'])
     
     cur.execute(insert_sql, review_values)
     conn.commit()
