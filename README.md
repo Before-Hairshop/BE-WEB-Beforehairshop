@@ -11,6 +11,7 @@ $ pip3 install boto3
 $ pip3 install flask-socketio
 ```
 
+## Running on instance
 ```shell
 $ nohup python3 app.py > log.txt &
 ```
