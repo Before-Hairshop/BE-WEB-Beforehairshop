@@ -10,3 +10,7 @@ $ pip3 install pymysql
 $ pip3 install boto3
 $ pip3 install flask-socketio
 ```
+
+```shell
+$ nohup python3 app.py > log.txt &
+```
