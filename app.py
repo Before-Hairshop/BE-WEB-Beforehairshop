@@ -165,6 +165,41 @@ def send():
         print('error')
         raise error
 
+
+# ==================
+## 가상 헤어스타일링 이미지 요청 API
+# ==================
+@app.route('/getImage', methods=['GET'])
+def get_image_url():
+    params = request.get_json()
+    param_user_id = params['user_id']
+    param_hair_style = params['hair_style']
+    param_hair_color = params['hair_color']
+
+    path = "/" + str(param_user_id) + "/"
+    if param_hair_style == "None" and param_hair_color == "None":
+        path = path + "color/black hair"
+    elif param_hair_style != "None" and param_hair_color == "None":
+        path = path + "both/" + param_hair_style + " hairstyle-black hair"
+    elif param_hair_style == "None" and param_hair_color != "None":
+        path = path + "color/" + param_hair_color + " hair"
+    else:
+        path = path + "both/" + param_hair_style + " hairstyle-" + param_hair_color + " hair"
+    
+    path = path + ".jpg"
+
+    
+    fail_response = {"result" : "fail", "presigned_url" : "None"}
+    try:
+        url = s3_client.generate_presigned_url(ClientMethod='get_object', Params={'Bucket': AWS_S3_BUCKET_NAME, 'Key': path}, ExpiresIn=3600)
+        success_response = {"result" : "success", "presigned_url" : url}
+
+        return jsonify(success_response)
+    except ClientError as e:
+        logging.error(e)
+        return jsonify(fail_response) 
+
+
 if __name__ == '__main__':
     socket_io.run(app, host='0.0.0.0', port=5000, debug=True)
 # FLASK_APP=app.py flask run
