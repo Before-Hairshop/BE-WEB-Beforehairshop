@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 request_queue = get_request_queue()
 response_queue = get_response_queue()
 
-@app.route('/')
+@app.route('/test')
 def hello():
     return "Hello World!"
 
