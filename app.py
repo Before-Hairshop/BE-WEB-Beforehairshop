@@ -127,7 +127,7 @@ def hairclip_inference():
 # ==================
 ## Response_queue로부터 inference 완료 메시지 받는 API (using Socket)
 # ==================
-@app.route('/api/receive')
+@app.route('/api/receive', methods=['GET'])
 def send():
     
     try:
@@ -170,7 +170,7 @@ def send():
 # ==================
 ## 가상 헤어스타일링 이미지 요청 API
 # ==================
-@app.route('/api/getImage', methods=['GET'])
+@app.route('/api/getImage', methods=['POST'])
 def get_image_url():
     params = request.get_json()
     param_user_id = params['user_id']
