@@ -18,6 +18,7 @@ from sqs_connection import get_request_queue, get_response_queue
 
 app = Flask(__name__)
 socket_io = SocketIO(app)
+socket_io.init_app(app, cors_allowed_origins="*")
 
 s3_client = boto3.client('s3', aws_access_key_id = AWS_ACCESS_KEY, aws_secret_access_key = AWS_SECRET_ACCESS_KEY, region_name = AWS_S3_BUCKET_REGION)
 logger = logging.getLogger(__name__)
