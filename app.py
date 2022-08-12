@@ -16,6 +16,7 @@ import json
 from botocore.exceptions import ClientError
 from sqs_connection import get_request_queue, get_response_queue
 
+conn, cur = connect_db()
 app = Flask(__name__)
 socket_io = SocketIO(app)
 socket_io.init_app(app, cors_allowed_origins="*")
@@ -37,8 +38,8 @@ def hello():
 def create_review():
     param = request.get_json()
 
-    ## AWS RDS 연결
-    conn, cur = connect_db()
+    # ## AWS RDS 연결
+    # conn, cur = connect_db()
 
     ## insert data - review table
     insert_sql = "insert into review (user_id, point, content) values (%s, %s, %s);"
@@ -61,7 +62,7 @@ def create_review():
 @app.route('/upload', methods=['POST'])
 def upload():
     # user 테이블에 튜플 insert
-    conn, cur = connect_db()
+    # conn, cur = connect_db()
     insert_sql = "insert into user values () ;"
     cur.execute(insert_sql)
     user_id = str(cur.lastrowid)
@@ -150,7 +151,12 @@ def send():
             
             param_user_id = data["user_id"]
 
-            socket_io.send('{}'.format(param_user_id))
+            # user status 값 변경시킨다.
+            update_sql = "update user set status = %s where id = %s;"
+            cur.execute(update_sql, (1, param_user_id))
+            conn.commit()
+
+            # socket_io.send('{}'.format(param_user_id))
 
             print("Message from Request Queue : ", data)    
             
@@ -199,6 +205,27 @@ def get_image_url():
     except ClientError as e:
         logging.error(e)
         return jsonify(fail_response) 
+
+@app.route('/api/inference-check', methods=['POST'])
+def inference_check():
+    params = request.get_json()
+    param_user_id = params['user_id']
+
+    check_sql = "select * from user where id = %s;"
+    
+    cur.execute(check_sql, (param_user_id))
+    rows = cur.fetchall()
+
+    success_response = {"result" : "success"}
+    fail_response = {"result" : "fail"}
+
+    for row in rows:
+        if row['status'] == 1:
+            return jsonify(success_response)
+        else:
+            return jsonify(fail_response)
+
+
 
 
 if __name__ == '__main__':
