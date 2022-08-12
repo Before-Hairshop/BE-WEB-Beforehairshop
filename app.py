@@ -66,7 +66,7 @@ def upload():
     user_id = str(cur.lastrowid)
     conn.commit()
 
-    path = '/' + str(user_id) + '/' + 'profile.jpeg'
+    path = '/' + str(user_id) + '/' + 'profile.jpg'
     try:
         upload_url = s3_client.generate_presigned_url('put_object',
                                                     Params={'Bucket': AWS_S3_BUCKET_NAME,
@@ -86,7 +86,7 @@ def upload():
 # ==================
 @app.route('/download', methods=['POST'])
 def download():
-    path = '/1/profile.jpeg'
+    path = '/1/profile.jpg'
     try:
         download_url = s3_client.generate_presigned_url('get_object',
                                                     Params={'Bucket': AWS_S3_BUCKET_NAME,
