@@ -18,8 +18,8 @@ from sqs_connection import get_request_queue, get_response_queue
 
 conn, cur = connect_db()
 app = Flask(__name__)
-socket_io = SocketIO(app)
-socket_io.init_app(app, cors_allowed_origins="*")
+# socket_io = SocketIO(app)
+# socket_io.init_app(app, cors_allowed_origins="*")
 
 s3_client = boto3.client('s3', aws_access_key_id = AWS_ACCESS_KEY, aws_secret_access_key = AWS_SECRET_ACCESS_KEY, region_name = AWS_S3_BUCKET_REGION)
 logger = logging.getLogger(__name__)
@@ -229,5 +229,5 @@ def inference_check():
 
 
 if __name__ == '__main__':
-    socket_io.run(app, host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port='5000', debug=True)
 # FLASK_APP=app.py flask run
