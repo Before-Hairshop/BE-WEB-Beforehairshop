@@ -26,14 +26,14 @@ logger = logging.getLogger(__name__)
 request_queue = get_request_queue()
 response_queue = get_response_queue()
 
-@app.route('/test')
+@app.route('/api')
 def hello():
     return "Hello World!"
 
 # ==================
 ## 리뷰 생성 API
 # ==================
-@app.route('/reviews', methods=['POST'])
+@app.route('/api/reviews', methods=['POST'])
 def create_review():
     param = request.get_json()
 
@@ -85,7 +85,7 @@ def upload():
 # ==================
 ## 테스트용
 # ==================
-@app.route('/download', methods=['POST'])
+@app.route('/api/download', methods=['POST'])
 def download():
     path = '/1/profile.jpg'
     try:
@@ -127,7 +127,7 @@ def hairclip_inference():
 # ==================
 ## Response_queue로부터 inference 완료 메시지 받는 API (using Socket)
 # ==================
-@app.route('/receive')
+@app.route('/api/receive')
 def send():
     
     try:
@@ -170,7 +170,7 @@ def send():
 # ==================
 ## 가상 헤어스타일링 이미지 요청 API
 # ==================
-@app.route('/getImage', methods=['GET'])
+@app.route('/api/getImage', methods=['GET'])
 def get_image_url():
     params = request.get_json()
     param_user_id = params['user_id']
