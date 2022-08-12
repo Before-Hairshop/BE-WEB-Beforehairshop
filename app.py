@@ -16,7 +16,7 @@ import json
 from botocore.exceptions import ClientError
 from sqs_connection import get_request_queue, get_response_queue
 
-conn, cur = connect_db()
+
 app = Flask(__name__)
 # socket_io = SocketIO(app)
 # socket_io.init_app(app, cors_allowed_origins="*")
@@ -39,7 +39,7 @@ def create_review():
     param = request.get_json()
 
     # ## AWS RDS 연결
-    # conn, cur = connect_db()
+    conn, cur = connect_db()
 
     ## insert data - review table
     insert_sql = "insert into review (user_id, point, content) values (%s, %s, %s);"
@@ -59,10 +59,10 @@ def create_review():
 # ==================
 ## 이미지 업로드 API
 # ==================
-@app.route('/upload', methods=['POST'])
+@app.route('/api/upload', methods=['POST'])
 def upload():
     # user 테이블에 튜플 insert
-    # conn, cur = connect_db()
+    conn, cur = connect_db()
     insert_sql = "insert into user values () ;"
     cur.execute(insert_sql)
     user_id = str(cur.lastrowid)
@@ -103,7 +103,7 @@ def download():
 # ==================
 ## Inference 요청 API
 # ==================
-@app.route('/inference', methods=['POST'])
+@app.route('/api/inference', methods=['POST'])
 def hairclip_inference():
     params = request.get_json()
     param_user_id = params['user_id']
@@ -213,6 +213,7 @@ def inference_check():
 
     check_sql = "select * from user where id = %s;"
     
+    conn, cur = connect_db()
     cur.execute(check_sql, (param_user_id))
     rows = cur.fetchall()
 
