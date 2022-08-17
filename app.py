@@ -63,8 +63,8 @@ def create_review():
 def upload():
     # user 테이블에 튜플 insert
     conn, cur = connect_db()
-    insert_sql = "insert into user values () ;"
-    cur.execute(insert_sql)
+    insert_sql = "insert into user (status) values (%s) ;"
+    cur.execute(insert_sql, (0))
     user_id = str(cur.lastrowid)
     conn.commit()
 
@@ -130,7 +130,7 @@ def hairclip_inference():
 # ==================
 @app.route('/api/receive', methods=['GET'])
 def send():
-    
+    conn, cur = connect_db()
     try:
         messages = response_queue.meta.client.receive_message(
             QueueUrl=AWS_RESPONSE_SQS_URL,
@@ -140,8 +140,8 @@ def send():
         )
         if 'Messages' not in messages:
             logger.info('message not in response_queue!')
-            fail_result = {'result': 'fail' }
-            return jsonify(fail_result) 
+            progress_result = {'result': 'progress' }
+            return jsonify(progress_result) 
         
 
         # for message in messages:
@@ -149,13 +149,18 @@ def send():
             data = message['Body']
             data = json.loads(data)
             
+            param_result = data["result"]
             param_user_id = data["user_id"]
 
-            # user status 값 변경시킨다.
-            update_sql = "update user set status = %s where id = %s;"
-            cur.execute(update_sql, (1, param_user_id))
-            conn.commit()
-
+            # success시에, user status 값 1로 변경시킨다.
+            if param_result == "success":
+                success_update_sql = "update user set status = %s where id = %s;"
+                cur.execute(success_update_sql, (1, param_user_id))
+                conn.commit()
+            elif param_result == "fail":
+                fail_update_sql = "update user set status = %s where id = %s;"
+                cur.execute(fail_update_sql, (-1, param_user_id))
+                conn.commit()
             # socket_io.send('{}'.format(param_user_id))
 
             print("Message from Request Queue : ", data)    
@@ -164,7 +169,7 @@ def send():
                 QueueUrl=AWS_RESPONSE_SQS_URL,
                 ReceiptHandle=message['ReceiptHandle']
             )
-            success_result = {'result': 'success', 'user_id': '{}'.format(param_user_id) }
+            success_result = {'result': param_result }
             return jsonify(success_result) 
 
     except ClientError as error:
@@ -218,11 +223,14 @@ def inference_check():
     rows = cur.fetchall()
 
     success_response = {"result" : "success"}
+    progress_response = {"result" : "progress"}
     fail_response = {"result" : "fail"}
 
     for row in rows:
         if row['status'] == 1:
             return jsonify(success_response)
+        elif row['status'] == 0:
+            return jsonify(progress_response)
         else:
             return jsonify(fail_response)
 
